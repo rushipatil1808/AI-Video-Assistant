@@ -40,8 +40,8 @@ def summarize(transcript : str) -> str:
         [
         (
             "system",
-            "You are an expert meeting summarizer. Combine these partial summaries "
-            "into one final professional meeting summary in bullet points.",
+            "You are an expert meeting summarizer. Combine these partial summaries into one highly detailed, comprehensive, and professional meeting summary.\n\n"
+            "Format the output strictly using Markdown bullet points. Ensure no critical information is lost, and categorize points logically (e.g., Main Topics, Key Takeaways).",
         ),
         ("human", "{text}"),
     ]
@@ -53,7 +53,7 @@ def summarize(transcript : str) -> str:
 
     return combined_chain.invoke(combined)
 
-def generate_title(transcipt : str) -> str:
+def generate_title(transcript : str) -> str:
     llm = get_llm()
 
     
@@ -72,7 +72,7 @@ def generate_title(transcipt : str) -> str:
         |StrOutputParser()
     )
 
-    return title_chain.invoke(transcipt[:2000])
+    return title_chain.invoke(transcript[:2000])
 
 
 

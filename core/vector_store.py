@@ -1,6 +1,11 @@
 import os 
 from langchain_chroma import Chroma 
-from langchain_community.embeddings import HuggingFaceEmbeddings
+# BUG FIX: langchain_community.embeddings.HuggingFaceEmbeddings is deprecated.
+# Use langchain_huggingface.HuggingFaceEmbeddings instead.
+try:
+    from langchain_huggingface import HuggingFaceEmbeddings
+except ImportError:
+    from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
 
@@ -18,8 +23,8 @@ def build_vector_store(transcript : str)->Chroma:
     print("Building vector Store")
 
     splitter = RecursiveCharacterTextSplitter(
-        chunk_size = 500,
-        chunk_overlap = 50
+        chunk_size = 1000,
+        chunk_overlap = 150
     )
     chunks = splitter.split_text(transcript)
 
@@ -50,7 +55,7 @@ def load_vector_store() ->Chroma:
 
     return vector_store
 
-def get_retriever(vector_store : Chroma, k :int = 4):
+def get_retriever(vector_store : Chroma, k :int = 8):
     return vector_store.as_retriever(
         search_type = 'similarity',
         search_kwargs = {"k":k}

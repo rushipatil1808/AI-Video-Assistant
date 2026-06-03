@@ -63,9 +63,9 @@ function AnalysisResult({ session }) {
             ) : <Zap size={28} style={{ color: 'var(--primary)' }} />}
           </div>
           <h2 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 6, lineHeight: 1.4 }}>{session.title}</h2>
-          <p style={{ fontSize: 12, color: 'var(--text-muted)', wordBreak: 'break-all', marginBottom: 8 }}>{session.source}</p>
-          {session.source?.includes('youtube.com') && (
-            <a href={session.source} target="_blank" rel="noopener noreferrer"
+          <p style={{ fontSize: 12, color: 'var(--text-muted)', wordBreak: 'break-all', marginBottom: 8 }}>{session.source || session.url}</p>
+          {(session.source || session.url)?.includes('youtube.com') && (
+            <a href={session.source || session.url} target="_blank" rel="noopener noreferrer"
               className="flex items-center gap-1" style={{ fontSize: 12, color: 'var(--primary)' }}>
               Open on YouTube <ExternalLink size={11} />
             </a>
@@ -152,7 +152,7 @@ export default function VideoAnalysis() {
     if (!source.trim()) return;
     try {
       setStepIdx(0);
-      // Simulate step progression
+      // Simulate step progression while backend processes
       const interval = setInterval(() => {
         setStepIdx(prev => {
           if (prev >= STEPS.length - 1) { clearInterval(interval); return prev; }
@@ -167,7 +167,9 @@ export default function VideoAnalysis() {
       navigate(`/analysis/${result.session_id}`);
     } catch (err) {
       setStepIdx(-1);
-      toast.error(err.message);
+      // BUG FIX: Show the actual backend error detail, not just "Network Error"
+      const detail = err.message || 'Analysis failed. Check backend logs.';
+      toast.error(detail);
     }
   }
 

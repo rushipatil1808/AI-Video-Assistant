@@ -33,6 +33,9 @@ from core.rag_engine import build_rag_chain, ask_question
 # ── In-memory session store (replace with Redis/DB in production) ─────────────
 sessions: dict = {}
 
+# ── Video library metadata (lightweight, no transcripts) ─────────────────────
+video_library: dict = {}
+
 # ── FastAPI App ───────────────────────────────────────────────────────────────
 app = FastAPI(
     title="VideoIQ API",
@@ -45,6 +48,9 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",
         "http://localhost:5173",
         "http://localhost:3000",
         "http://localhost:3001",
@@ -115,28 +121,37 @@ async def analyze_video(request: AnalyzeRequest):
         raise HTTPException(status_code=422, detail="Source URL or file path is required.")
 
     try:
-        # Step 1 — Audio Processing
+        import asyncio
+        from concurrent.futures import ThreadPoolExecutor
+
+        # Step 1 — Audio Processing (must be first)
         chunks = process_input(request.source)
 
-        # Step 2 — Transcription
+        # Step 2 — Transcription (must be second)
         transcript = transcribe_all(chunks, request.language)
 
-        # Step 3 — Title Generation
-        title = generate_title(transcript)
-
-        # Step 4 — Summarization
-        summary = summarize(transcript)
-
-        # Step 5 — Extraction
-        action_items = extract_action_items(transcript)
-        decisions = extract_key_decisions(transcript)
-        questions = extract_questions(transcript)
-
-        # Step 6 — Build RAG Chain
-        rag_chain = build_rag_chain(transcript)
+        # Step 3-5 — Run ALL LLM calls in parallel (title, summary, extractions, RAG)
+        loop = asyncio.get_event_loop()
+        with ThreadPoolExecutor(max_workers=6) as pool:
+            (
+                title,
+                summary,
+                action_items,
+                decisions,
+                questions,
+                rag_chain,
+            ) = await asyncio.gather(
+                loop.run_in_executor(pool, generate_title, transcript),
+                loop.run_in_executor(pool, summarize, transcript),
+                loop.run_in_executor(pool, extract_action_items, transcript),
+                loop.run_in_executor(pool, extract_key_decisions, transcript),
+                loop.run_in_executor(pool, extract_questions, transcript),
+                loop.run_in_executor(pool, build_rag_chain, transcript),
+            )
 
         # Create session
         session_id = str(uuid.uuid4())
+        created_at = datetime.utcnow().isoformat() + "Z"
         sessions[session_id] = {
             "title": title,
             "transcript": transcript,
@@ -147,7 +162,20 @@ async def analyze_video(request: AnalyzeRequest):
             "rag_chain": rag_chain,
             "source": request.source,
             "language": request.language,
-            "created_at": datetime.utcnow().isoformat() + "Z",
+            "created_at": created_at,
+        }
+
+        # Save lightweight entry to video library
+        video_library[session_id] = {
+            "session_id": session_id,
+            "title": title,
+            "url": request.source,
+            "language": request.language,
+            "timestamp": created_at,
+            "summary": summary[:200] if summary else "",
+            "action_items": action_items,
+            "key_decisions": decisions,
+            "open_questions": questions,
         }
 
         return AnalysisResult(
@@ -158,7 +186,7 @@ async def analyze_video(request: AnalyzeRequest):
             action_items=action_items,
             key_decisions=decisions,
             open_questions=questions,
-            created_at=sessions[session_id]["created_at"],
+            created_at=created_at,
             source=request.source,
             language=request.language,
         )
@@ -240,6 +268,24 @@ async def delete_session(session_id: str):
         raise HTTPException(status_code=404, detail=f"Session '{session_id}' not found.")
     del sessions[session_id]
     return {"message": "Session deleted successfully.", "session_id": session_id}
+
+
+# ── Video Library Endpoints ───────────────────────────────────────────────────
+
+@app.get("/api/library", tags=["Library"])
+async def get_library():
+    """Return all analyzed videos (lightweight metadata, no transcripts)."""
+    return {"videos": list(video_library.values())}
+
+
+@app.delete("/api/library/{session_id}", tags=["Library"])
+async def delete_video(session_id: str):
+    """Remove a video from the library and its session data."""
+    if session_id not in video_library and session_id not in sessions:
+        raise HTTPException(status_code=404, detail=f"Session '{session_id}' not found.")
+    sessions.pop(session_id, None)
+    video_library.pop(session_id, None)
+    return {"deleted": session_id}
 
 
 # ── Run ───────────────────────────────────────────────────────────────────────

@@ -3,12 +3,19 @@ import os
 import re
 import subprocess
 import uuid
+import shutil
 from dotenv import load_dotenv
 
 load_dotenv()
 
 DOWNLOAD_DIR = 'downloades'
-os.makedirs(DOWNLOAD_DIR,exist_ok = True)
+os.makedirs(DOWNLOAD_DIR, exist_ok=True)
+
+# BUG FIX: Warn clearly if ffmpeg is not on PATH.
+# The FFMPEG_PATH env var (set in .env) points to the imageio_ffmpeg binary.
+# _ensure_ffmpeg_on_path() in transcriber.py adds it to PATH at import time,
+# so by the time audio_processor runs, ffmpeg should be available.
+# We delay the hard check until convert_to_wav_ffmpeg is actually called.
 
 def sanitize_filename(filename: str) -> str:
     """Remove/replace characters invalid on Windows file paths."""
@@ -22,10 +29,16 @@ def download_youtube_audio(url: str) -> str:
     output_path = os.path.join(DOWNLOAD_DIR, "%(id)s.%(ext)s")
 
     ydl_opts = {
-        "format": "bestaudio[ext=m4a]/bestaudio",
+        # BUG FIX: yt-dlp warns about missing JS runtime (deno/node) when
+        # trying formats that require it. Use format filter that avoids those
+        # and falls back gracefully to any available audio.
+        "format": "bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio",
         "outtmpl": output_path,
         "quiet": False,
         "restrictfilenames": True,
+        # Suppress JS-runtime warnings — audio extraction doesn't need it
+        "extractor_args": {"youtube": {"skip": ["dash", "hls"]}},
+        "noplaylist": True,
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:

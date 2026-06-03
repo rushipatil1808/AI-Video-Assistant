@@ -1,6 +1,6 @@
 import os
 from langchain_mistralai import ChatMistralAI
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough, RunnableLambda
 from core.vector_store import build_vector_store, load_vector_store, get_retriever
@@ -9,47 +9,45 @@ def get_llm():
     return ChatMistralAI(
         model="mistral-small-latest",
         mistral_api_key=os.getenv("MISTRAL_API_KEY"),
-        temperature=0.3,
+        temperature=0.4,
     )
 
 def format_docs(docs):
     return "\n\n".join([doc.page_content for doc in docs])
 
-def build_rag_chain(transcript:str):
+def build_rag_chain(transcript: str):
 
     vector_store = build_vector_store(transcript)
-
-    retriever = get_retriever(vector_store, k = 4)
-
+    retriever = get_retriever(vector_store, k=10)
     llm = get_llm()
 
-    prompt = ChatPromptTemplate.from_messages(
+    prompt = PromptTemplate(
+        input_variables=["context", "question"],
+        template="""You are a helpful AI assistant analyzing a video transcript.
 
-        [(
-            "system",
-            """You are an expert meeting assistant. Answer the user's question 
-based ONLY on the meeting transcript context provided below.
+Use the following transcript context to answer the question.
+If the exact answer is not in the context, use what IS available
+to give the most helpful related answer.
+Never say "I could not find" — always provide what you know from the transcript.
+Format your answer using Markdown where appropriate (bold, bullet lists, etc.).
 
-If the answer is not found in the context, say: 
-"I could not find this information in the meeting transcript."
+Context:
+{context}
 
-Always be concise and precise. If quoting someone, mention it clearly.
+Question: {question}
 
-Context from meeting transcript:
-{context}""",
-        ),
-        ("human", "{question}"),
-    ]
+Answer:"""
     )
 
-    #full LCEL Rag pipeline 
-
+    # LCEL RAG pipeline
     rag_chain = (
-
-        {"context" : retriever | RunnableLambda(format_docs),
-         "question": RunnablePassthrough()
-         }
-         |prompt|llm|StrOutputParser()
+        {
+            "context": retriever | RunnableLambda(format_docs),
+            "question": RunnablePassthrough(),
+        }
+        | prompt
+        | llm
+        | StrOutputParser()
     )
 
     return rag_chain
@@ -57,7 +55,7 @@ Context from meeting transcript:
 
 def load_rag_chain():
     vector_store = load_vector_store()
-    retriver = get_retriever()
+    retriver = get_retriever(vector_store)
 
     llm = get_llm()
     prompt = ChatPromptTemplate.from_messages([

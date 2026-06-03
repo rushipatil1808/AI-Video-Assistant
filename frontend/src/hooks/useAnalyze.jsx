@@ -16,7 +16,12 @@ export function useAnalyze() {
       setActive(result);
       return result;
     } catch (e) {
-      const msg = e.response?.data?.detail || e.message || 'Analysis failed';
+      // BUG FIX: axios wraps backend errors in e.response.data.detail
+      // Fallback chain: backend detail → axios message → generic
+      let msg = e.response?.data?.detail || e.message || 'Analysis failed. Check that the backend is running.';
+      if (Array.isArray(msg)) {
+        msg = msg.map(err => `${err.loc.join('.')}: ${err.msg}`).join(', ');
+      }
       setError(msg);
       throw new Error(msg);
     } finally {

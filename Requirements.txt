@@ -42,3 +42,10 @@ python-dotenv>=1.0.0              # Load API keys from .env
 numpy>=1.26.0
 tqdm>=4.66.0                      # Progress bars
 requests>=2.32.0
+
+# ── Backend API & Vector DB Extras ────────────────────────────────────────────
+fastapi>=0.100.0                  # Backend API framework
+uvicorn>=0.22.0                   # ASGI Server
+python-multipart>=0.0.9           # Required by FastAPI for form/file uploads
+langchain-chroma>=0.1.0           # LangChain Chroma integration
+langchain-huggingface>=0.0.3      # BUG FIX: replaces deprecated langchain_community.HuggingFaceEmbeddings
