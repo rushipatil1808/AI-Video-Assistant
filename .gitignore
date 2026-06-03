@@ -1,0 +1,17 @@
+.env
+.env.*
+
+__pycache__/
+*.py[cod]
+
+node_modules/
+dist/
+build/
+backend/bin/
+
+*.log
+
+downloades/
+vector_db/
+chroma_db/
+data/
