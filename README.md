@@ -38,9 +38,6 @@
 - **React.js** (via Vite)
 - **React Router** for seamless SPA navigation
 - **React Query** for robust state and data fetching management
-- **Lucide React** for beautiful iconography
-- **React Markdown** for rendering rich AI responses
-- **Axios** for API communication
 
 ### Backend Technologies
 - **Python 3.10+**
