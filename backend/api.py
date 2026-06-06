@@ -1,6 +1,6 @@
 """
 VideoIQ FastAPI Backend  –  backend/api.py
-Wraps the existing AI pipeline and exposes REST API endpoints.
+Wraps the existing pipeline and exposes REST API endpoints.
 DO NOT modify the core pipeline logic — only adds HTTP interface.
 
 Run with:
@@ -35,8 +35,8 @@ sessions: dict = {}
 
 # ── FastAPI App ───────────────────────────────────────────────────────────────
 app = FastAPI(
-    title="VideoIQ API",
-    description="AI Video Assistant — YouTube Analysis, Transcription, RAG Chat",
+    title="QuickNotes AI API",
+    description="Transform Videos into Smart Notes",
     version="1.0.0",
     docs_url="/api/docs",
     redoc_url="/api/redoc",
@@ -76,12 +76,12 @@ async def root_redirect():
 @app.get("/health")
 async def health():
     """Health check — Dashboard polls this to show backend status."""
-    return {"status": "ok", "service": "VideoIQ", "version": "1.0.0"}
+    return {"status": "ok", "service": "QuickNotes AI", "version": "1.0.0"}
 
 @app.get("/api/health")
 async def api_health():
     """Secondary health check path used by frontend api.jsx getHealth()."""
-    return {"status": "ok", "service": "VideoIQ", "version": "1.0.0"}
+    return {"status": "ok", "service": "QuickNotes AI", "version": "1.0.0"}
 
 
 @app.post("/api/analyze")

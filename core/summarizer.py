@@ -10,48 +10,23 @@ def get_llm():
     return ChatMistralAI(model = "mistral-small-latest", mistral_api_key = os.getenv("MISTRAL_API_KEY"),temperature=0.3)
 
 
-def split_transcript(transcript: str) -> list:
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size = 3000,
-        chunk_overlap = 200
-    )
-
-    return splitter.split_text(transcript)
-
 def summarize(transcript : str) -> str:
     llm = get_llm()
 
-    map_prompt = ChatPromptTemplate.from_messages(
-        [
-        ("system", "Summarize this portion of a meeting transcript concisely."),
-        ("human", "{text}"),
-    ]
-    )
+    # Limit transcript size for maximum speed and token efficiency
+    truncated_transcript = transcript[:15000]
 
-    map_chain = map_prompt | llm | StrOutputParser()
-
-    chunks = split_transcript(transcript)
-
-    chunk_summaries = [map_chain.invoke({"text" : chunk}) for chunk in chunks]
-
-    combined = "\n\n".join(chunk_summaries)
-
-    combined_prompt = ChatPromptTemplate.from_messages(
-        [
+    prompt = ChatPromptTemplate.from_messages([
         (
             "system",
-            "You are an expert meeting summarizer. Combine these partial summaries into one highly detailed, comprehensive, and professional meeting summary.\n\n"
-            "Format the output strictly using Markdown bullet points. Ensure no critical information is lost, and categorize points logically (e.g., Main Topics, Key Takeaways).",
+            "You are an expert meeting summarizer. Provide a concise, highly detailed, and professional summary of the provided transcript.\n\n"
+            "Format the output strictly using Markdown bullet points. Categorize points logically (e.g., Main Topics, Key Takeaways)."
         ),
         ("human", "{text}"),
-    ]
-    )
+    ])
 
-    combined_chain = (
-        RunnablePassthrough() | RunnableLambda(lambda x:{"text":x}) | combined_prompt | llm | StrOutputParser()
-    )
-
-    return combined_chain.invoke(combined)
+    chain = prompt | llm | StrOutputParser()
+    return chain.invoke({"text": truncated_transcript})
 
 def generate_title(transcript : str) -> str:
     llm = get_llm()

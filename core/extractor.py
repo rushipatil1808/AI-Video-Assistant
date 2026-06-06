@@ -31,7 +31,7 @@ def extract_action_items(transcript:str)->str:
         "Format as a numbered list. If none found say 'No action items found.'"
     )
 
-    return chain.invoke(transcript)
+    return chain.invoke(transcript[:15000])
 
 
 def extract_key_decisions(transcript: str) -> str:
@@ -40,7 +40,7 @@ def extract_key_decisions(transcript: str) -> str:
         "extract all key decisions made. Format as a numbered list. "
         "If none found say 'No key decisions found.'"
     )
-    return chain.invoke(transcript)
+    return chain.invoke(transcript[:15000])
 
 
 def extract_questions(transcript: str) -> str:
@@ -49,4 +49,4 @@ def extract_questions(transcript: str) -> str:
         "or topics needing follow-up. Format as a numbered list. "
         "If none found say 'No open questions found.'"
     )
-    return chain.invoke(transcript)
+    return chain.invoke(transcript[:15000])

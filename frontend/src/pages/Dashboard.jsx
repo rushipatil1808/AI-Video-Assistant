@@ -1,133 +1,180 @@
-import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Video, MessageSquare, Database, TrendingUp, Clock, Zap, ArrowRight } from 'lucide-react';
-import { getHealth } from '../services/api.jsx';
+import { Video, MessageSquare, ArrowRight, FileText, Clock } from 'lucide-react';
 import { useSessionStore } from '../hooks/useSessionStore.jsx';
-
-function timeAgo(iso) {
-  const diff = (Date.now() - new Date(iso)) / 1000;
-  if (diff < 60) return 'just now';
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  return `${Math.floor(diff / 86400)}d ago`;
-}
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { sessions } = useSessionStore();
-  const [health, setHealth] = useState(null);
-
-  useEffect(() => {
-    getHealth().then(setHealth).catch(() => setHealth({ status: 'offline' }));
-  }, []);
-
-  const stats = [
-    { label: 'Videos Analyzed', value: sessions.length, icon: Video, color: '#6366F1', bg: '#EEF2FF' },
-    { label: 'Total Transcripts', value: sessions.length, icon: MessageSquare, color: '#10B981', bg: '#ECFDF5' },
-    { label: 'Knowledge Sessions', value: sessions.length, icon: Database, color: '#F59E0B', bg: '#FFFBEB' },
-    { label: 'Backend Status', value: health?.status === 'ok' ? 'Online' : 'Offline', icon: Zap, color: health?.status === 'ok' ? '#10B981' : '#EF4444', bg: health?.status === 'ok' ? '#ECFDF5' : '#FEF2F2' },
-  ];
+  const latestVideo = sessions[0] || null;
 
   return (
-    <div>
-      <div className="page-header">
-        <h1 className="page-title">Welcome to VideoIQ</h1>
-        <p className="page-subtitle">Transform videos into actionable knowledge using AI</p>
+    <div className="page-wrapper">
+
+      {/* Hero Section */}
+      <div style={{ marginBottom: 40, textAlign: 'center', paddingTop: 16 }}>
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          width: 60, height: 60, background: 'var(--primary-bg)', borderRadius: 16,
+          marginBottom: 20,
+        }}>
+          <Video size={28} color="var(--primary)" />
+        </div>
+        <h1 style={{ fontSize: 30, fontWeight: 700, color: 'var(--text)', marginBottom: 10 }}>
+          QuickNotes AI
+        </h1>
+        <p style={{ fontSize: 15, color: 'var(--text-muted)', maxWidth: 480, margin: '0 auto' }}>
+          Transform Videos into Smart Notes
+        </p>
       </div>
 
-      {/* Stat cards */}
-      <div className="grid-4 mb-4">
-        {stats.map(({ label, value, icon: Icon, color, bg }) => (
-          <div key={label} className="card stat-card">
-            <div className="flex items-center justify-between mb-3">
-              <div className="stat-icon" style={{ background: bg }}>
-                <Icon size={20} style={{ color }} />
-              </div>
-            </div>
-            <div className="stat-value">{value}</div>
-            <div className="stat-label">{label}</div>
+      {/* Quick Actions */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, maxWidth: 840, margin: '0 auto 32px' }}>
+        {/* Analyze Card */}
+        <div
+          className="card card-p cursor-pointer"
+          onClick={() => navigate('/analysis')}
+          style={{ transition: 'border-color 0.15s' }}
+          onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--primary)'}
+          onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
+        >
+          <div style={{
+            width: 44, height: 44, background: 'var(--primary-bg)',
+            borderRadius: 10, display: 'flex', alignItems: 'center',
+            justifyContent: 'center', marginBottom: 14,
+          }}>
+            <Video size={22} color="var(--primary)" />
           </div>
-        ))}
+          <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', marginBottom: 6 }}>
+            Analyze Video
+          </h3>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 14 }}>
+            Paste a YouTube URL to extract transcript and generate a summary.
+          </p>
+          <div className="flex items-center gap-1" style={{ color: 'var(--primary)', fontSize: 13, fontWeight: 500 }}>
+            Get started <ArrowRight size={13} />
+          </div>
+        </div>
+
+        {/* Chat Card */}
+        <div
+          className="card card-p cursor-pointer"
+          onClick={() => navigate('/chat')}
+          style={{ transition: 'border-color 0.15s' }}
+          onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--primary)'}
+          onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
+        >
+          <div style={{
+            width: 44, height: 44, background: '#F0FDF4',
+            borderRadius: 10, display: 'flex', alignItems: 'center',
+            justifyContent: 'center', marginBottom: 14,
+          }}>
+            <MessageSquare size={22} color="#10B981" />
+          </div>
+          <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', marginBottom: 6 }}>
+            Open Chat
+          </h3>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 14 }}>
+            Ask questions about your analyzed video using AI.
+          </p>
+          <div className="flex items-center gap-1" style={{ color: '#10B981', fontSize: 13, fontWeight: 500 }}>
+            Open chat <ArrowRight size={13} />
+          </div>
+        </div>
+
+        {/* PDF Card */}
+        <div
+          className="card card-p cursor-pointer"
+          onClick={() => navigate('/pdf')}
+          style={{ transition: 'border-color 0.15s' }}
+          onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--primary)'}
+          onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
+        >
+          <div style={{
+            width: 44, height: 44, background: '#FEF2F2',
+            borderRadius: 10, display: 'flex', alignItems: 'center',
+            justifyContent: 'center', marginBottom: 14,
+          }}>
+            <FileText size={22} color="#EF4444" />
+          </div>
+          <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', marginBottom: 6 }}>
+            PDF Summary
+          </h3>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 14 }}>
+            Upload a PDF document to generate smart notes and chat.
+          </p>
+          <div className="flex items-center gap-1" style={{ color: '#EF4444', fontSize: 13, fontWeight: 500 }}>
+            Upload PDF <ArrowRight size={13} />
+          </div>
+        </div>
       </div>
 
-      {/* Quick actions */}
-      <div className="grid-3 mb-4">
-        {[
-          { title: 'Analyze a Video', desc: 'Paste a YouTube URL or upload a file to get started.', icon: Video, color: '#6366F1', bg: '#EEF2FF', action: () => navigate('/analysis') },
-          { title: 'Chat with AI', desc: 'Ask questions about any of your analyzed videos.', icon: MessageSquare, color: '#10B981', bg: '#ECFDF5', action: () => navigate('/chat') },
-          { title: 'Knowledge Base', desc: 'Browse all sessions, transcripts and summaries.', icon: Database, color: '#F59E0B', bg: '#FFFBEB', action: () => navigate('/knowledge') },
-        ].map(({ title, desc, icon: Icon, color, bg, action }) => (
-          <div key={title} className="card card-p cursor-pointer" onClick={action}
-            style={{ transition: 'all 0.15s ease' }}
-            onMouseEnter={e => e.currentTarget.style.borderColor = color}
+      {/* Recent Activity */}
+      <div style={{ maxWidth: 640, margin: '0 auto' }}>
+        <h2 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 12 }}>
+          Recent Activity
+        </h2>
+
+        {!latestVideo ? (
+          <div className="card card-p" style={{ textAlign: 'center', padding: '32px 20px' }}>
+            <p style={{ color: 'var(--text-muted)', fontSize: 13.5 }}>
+              No activity yet.{' '}
+              <span
+                style={{ color: 'var(--primary)', cursor: 'pointer', fontWeight: 500 }}
+                onClick={() => navigate('/analysis')}
+              >
+                Analyze your first video or PDF →
+              </span>
+            </p>
+          </div>
+        ) : (
+          <div
+            className="card flex items-center gap-3 cursor-pointer"
+            style={{ padding: 16, transition: 'border-color 0.15s' }}
+            onClick={() => navigate(latestVideo.type === 'pdf' || latestVideo.title?.endsWith('.pdf') ? '/pdf' : '/analysis')}
+            onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--primary)'}
             onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
           >
-            <div style={{ width: 44, height: 44, borderRadius: 12, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
-              <Icon size={22} style={{ color }} />
+            {/* Thumbnail */}
+            <div style={{
+              width: 96, height: 54, borderRadius: 6, overflow: 'hidden',
+              background: 'var(--surface)', flexShrink: 0,
+            }}>
+              {(latestVideo.source || latestVideo.url || '').includes('youtu') ? (
+                <img
+                  src={`https://img.youtube.com/vi/${(latestVideo.source || latestVideo.url).match(/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/)?.[1]}/mqdefault.jpg`}
+                  alt="thumb"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  onError={e => { e.target.style.display = 'none'; }}
+                />
+              ) : (
+                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {latestVideo.type === 'pdf' || latestVideo.title?.endsWith('.pdf') ? (
+                    <FileText size={20} color="var(--text-subtle)" />
+                  ) : (
+                    <Video size={20} color="var(--text-subtle)" />
+                  )}
+                </div>
+              )}
             </div>
-            <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>{title}</h3>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5 }}>{desc}</p>
-            <div className="flex items-center gap-1 mt-3" style={{ color, fontSize: 13, fontWeight: 500 }}>
-              Open <ArrowRight size={13} />
+
+            {/* Info */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p className="truncate" style={{ fontSize: 14, fontWeight: 500, color: 'var(--text)', marginBottom: 4 }}>
+                {latestVideo.title}
+              </p>
+              <div className="flex items-center gap-1" style={{ color: 'var(--text-subtle)', fontSize: 12 }}>
+                <Clock size={11} />
+                {latestVideo.created_at
+                  ? new Date(latestVideo.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+                  : 'Recently analyzed'}
+              </div>
             </div>
+
+            <ArrowRight size={16} color="var(--text-subtle)" />
           </div>
-        ))}
+        )}
       </div>
 
-      {/* Recent sessions */}
-      <div className="card">
-        <div className="card-header">
-          <span className="card-title">Recent Sessions</span>
-          {sessions.length > 0 && (
-            <button className="btn btn-ghost btn-sm" onClick={() => navigate('/library')}>
-              View all <ArrowRight size={13} />
-            </button>
-          )}
-        </div>
-        <div className="card-body" style={{ padding: 0 }}>
-          {sessions.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-icon"><Video size={24} /></div>
-              <p className="empty-title">No sessions yet</p>
-              <p className="empty-desc">Analyze your first video to see it here.</p>
-              <button className="btn btn-primary" onClick={() => navigate('/analysis')}>
-                <Zap size={14} /> Analyze a Video
-              </button>
-            </div>
-          ) : (
-            <div>
-              {sessions.slice(0, 6).map((s, i) => (
-                <div
-                  key={s.session_id}
-                  className="flex items-center gap-3 cursor-pointer"
-                  style={{
-                    padding: '12px 20px',
-                    borderBottom: i < sessions.slice(0, 6).length - 1 ? '1px solid var(--border)' : 'none',
-                    transition: 'background 0.1s ease',
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.background = 'var(--surface)'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                  onClick={() => navigate(`/analysis/${s.session_id}`)}
-                >
-                  <div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--primary-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <Video size={16} style={{ color: 'var(--primary)' }} />
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontSize: 13.5, fontWeight: 500, color: 'var(--text)' }} className="truncate">{s.title}</p>
-                    <p style={{ fontSize: 12, color: 'var(--text-muted)' }} className="truncate">{s.source}</p>
-                  </div>
-                  <div className="flex items-center gap-2" style={{ flexShrink: 0 }}>
-                    <span className="badge badge-gray">{s.language}</span>
-                    <span style={{ fontSize: 12, color: 'var(--text-subtle)' }}>{timeAgo(s.created_at)}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
     </div>
   );
 }
-
-

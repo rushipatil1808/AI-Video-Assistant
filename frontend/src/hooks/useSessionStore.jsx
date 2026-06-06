@@ -1,20 +1,20 @@
-// Simple in-memory + localStorage session store (no external library needed)
 import { useState, useCallback, createContext, useContext, useEffect } from 'react';
+import { listSessions, deleteSession as apiDeleteSession } from '../services/api.jsx';
 
 const SessionCtx = createContext(null);
 
 export function SessionProvider({ children }) {
-  const [sessions, setSessions] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('viq_sessions') || '[]'); }
-    catch { return []; }
-  });
+  const [sessions, setSessions] = useState([]);
   const [active, setActiveState] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // Persist on change
+  // Fetch from backend on mount
   useEffect(() => {
-    try { localStorage.setItem('viq_sessions', JSON.stringify(sessions)); }
-    catch {}
-  }, [sessions]);
+    listSessions()
+      .then(data => setSessions(data))
+      .catch(err => console.error("Failed to load sessions", err))
+      .finally(() => setLoading(false));
+  }, []);
 
   const addSession = useCallback((result) => {
     setSessions(prev => {
@@ -27,13 +27,20 @@ export function SessionProvider({ children }) {
     setActiveState(session);
   }, []);
 
-  const removeSession = useCallback((id) => {
-    setSessions(prev => prev.filter(s => s.session_id !== id));
-    setActiveState(prev => prev?.session_id === id ? null : prev);
+  const removeSession = useCallback(async (id) => {
+    try {
+      await apiDeleteSession(id);
+      setSessions(prev => prev.filter(s => s.session_id !== id));
+      setActiveState(prev => prev?.session_id === id ? null : prev);
+      return true;
+    } catch (e) {
+      console.error("Failed to delete session", e);
+      return false;
+    }
   }, []);
 
   return (
-    <SessionCtx.Provider value={{ sessions, active, addSession, setActive, removeSession }}>
+    <SessionCtx.Provider value={{ sessions, active, addSession, setActive, removeSession, loading }}>
       {children}
     </SessionCtx.Provider>
   );
@@ -42,5 +49,3 @@ export function SessionProvider({ children }) {
 export function useSessionStore() {
   return useContext(SessionCtx);
 }
-
-

@@ -1,53 +1,40 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import { SessionProvider } from './hooks/useSessionStore.jsx';
+import { Suspense, lazy } from 'react';
 import Layout from './components/layout/Layout';
-import Dashboard from './pages/Dashboard';
-import VideoAnalysis from './pages/VideoAnalysis';
-import Chat from './pages/Chat';
-import Library from './pages/Library';
-import KnowledgeBase from './pages/KnowledgeBase';
-import Search from './pages/Search';
-import Settings from './pages/Settings';
 
-const qc = new QueryClient({
-  defaultOptions: { queries: { retry: 1, staleTime: 60_000 } },
-});
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const VideoAnalysis = lazy(() => import('./pages/VideoAnalysis'));
+const PdfAnalysis = lazy(() => import('./pages/PdfAnalysis'));
+const Chat = lazy(() => import('./pages/Chat'));
 
 export default function App() {
   return (
-    <QueryClientProvider client={qc}>
-      <SessionProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route element={<Layout />}>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/analysis" element={<VideoAnalysis />} />
-              <Route path="/analysis/:id" element={<VideoAnalysis />} />
-              <Route path="/chat" element={<Chat />} />
-              <Route path="/library" element={<Library />} />
-              <Route path="/knowledge" element={<KnowledgeBase />} />
-              <Route path="/search" element={<Search />} />
-              <Route path="/settings" element={<Settings />} />
-            </Route>
-          </Routes>
-        </BrowserRouter>
-        <Toaster
-          position="bottom-right"
-          toastOptions={{
-            style: {
-              background: '#0F172A', color: '#F8FAFC',
-              border: '1px solid #1E293B', borderRadius: 8,
-              fontSize: 13, fontFamily: 'Inter, system-ui, sans-serif',
-            },
-            success: { iconTheme: { primary: '#10B981', secondary: '#0F172A' } },
-            error: { iconTheme: { primary: '#EF4444', secondary: '#0F172A' } },
-          }}
-        />
-      </SessionProvider>
-    </QueryClientProvider>
+    <SessionProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route element={<Layout />}>
+            <Route path="/" element={<Suspense fallback={<div className="p-4 text-center text-sm text-gray-500">Loading Dashboard...</div>}><Dashboard /></Suspense>} />
+            <Route path="/analysis" element={<Suspense fallback={<div className="p-4 text-center text-sm text-gray-500">Loading Analysis...</div>}><VideoAnalysis /></Suspense>} />
+            <Route path="/pdf" element={<Suspense fallback={<div className="p-4 text-center text-sm text-gray-500">Loading PDF Analysis...</div>}><PdfAnalysis /></Suspense>} />
+            <Route path="/chat" element={<Suspense fallback={<div className="p-4 text-center text-sm text-gray-500">Loading Chat...</div>}><Chat /></Suspense>} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+      <Toaster
+        position="bottom-right"
+        toastOptions={{
+          style: {
+            background: '#fff',
+            color: '#111827',
+            border: '1px solid #E5E7EB',
+            borderRadius: 8,
+            fontSize: 13,
+            fontFamily: 'Inter, system-ui, sans-serif',
+          },
+        }}
+      />
+    </SessionProvider>
   );
 }
-
-
